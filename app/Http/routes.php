@@ -12,13 +12,13 @@
 */
 
 $app->get('/', function () use ($app) {
-    return $app->welcome();
+	return $app->welcome();
 });
 
 $app->routeMiddleware([
 	'apikey' => 'App\Http\Middleware\APIKeyMiddleware',
 	'site' => 'App\Http\Middleware\SiteMiddleware',
-    'auth' => 'App\Http\Middleware\AuthMiddleware'
+	'auth' => 'App\Http\Middleware\AuthMiddleware'
 ]);
 
 $app->group(['middleware' => 'apikey'], function($app) {
