@@ -32,7 +32,7 @@ class WalletController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $validator->errors();
+            return response()->json(array('error' => $validator->errors()), 400);      
         }
 
         $amount = $request->input('amount');
@@ -58,14 +58,14 @@ class WalletController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $validator->errors();
+            return response()->json(array('error' => $validator->errors()), 400);      
         }
 
         $amount = $request->input('amount');
         
         $user = User::where(['document' => $request->input('document'), 'phone' => $request->input('phone')])->first();
     	if (!$user) {
-    		return response()->json(array('error' => 'Unable to find a user matching that phobe and document.'), 401);
+    		return response()->json(array('error' => 'Unable to find a user matching that phone and document.'), 401);
         }
 
         $userSending = User::where('id', $this->currentUser()->id)->first();
@@ -75,26 +75,32 @@ class WalletController extends Controller
 
         $token = Token::generateForUserSend($user->id);
         $balance = Transaction::getBalance($userSending->id);
-        $mail = $this->sendEmail($userSending, $token);
 
         if ($balance<=0) {
     		return response()->json(array('error' => "You don't have a balance to send"), 401);
         }
+        if ($walletIdSend === $walletIdAdd) {
+    		return response()->json(array('error' => "You can't sent your self"), 401);
+        }
+
+        $mail = $this->sendEmail($userSending, $token);
 
         if($mail){
             $transactionSend = Transaction::generateForUser($walletIdSend, $amount, 'send', 0, $token);
             $transactionAdd = Transaction::generateForUser($walletIdAdd, $amount, 'add', 0, $token);
+            $message = 'Check your email';
+            return response()->json([
+                'userReceive' => $user, 
+                'token' => $token, 
+                'balance' => $balance, 
+                'transactionSend' => $transactionSend,
+                'transactionAdd'=> $transactionAdd,
+                'mail' => $message
+            ], 200, []);
         }
+        
 
 
-        return response()->json([
-            'userReceive' => $user, 
-            'token' => $token, 
-            'balance' => $balance, 
-            'transactionSend' => $transactionSend,
-            'transactionAdd'=> $transactionAdd,
-            'mail' => $mail
-        ], 200, []);
     }
 
     public function updateTransaction(Request $request) {
@@ -104,12 +110,12 @@ class WalletController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $validator->errors();
+            return response()->json(array('error' => $validator->errors()), 400);      
         }
 
         $data = $request->all();
 
-        $transaction =  Transaction::where('token', '=', $data['token'])->first();
+        $transaction =  Transaction::where('token', '=', $data['token']);
 
         if(!$transaction) {
             return response()->json(['error' => 'Transaction not found'], 400, []);
@@ -117,7 +123,8 @@ class WalletController extends Controller
         
         $transaction->update(['status' => 1]);
 
-        return response()->json('Transaction update', 200, []);
+    	return response()->json(array('success' => "Transaction update success"), 200);
+
     }
 
     protected function sendEmail($user, $token)
@@ -136,7 +143,7 @@ class WalletController extends Controller
             $mail->Port       = env('MAIL_PORT');                  // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
 
             //Recipients
-            $mail->setFrom(env('MAIL_FROM_ADDRESS'), 'Mailer');
+            $mail->setFrom(env('MAIL_FROM_ADDRESS'), 'Epayco');
             $mail->addAddress($user->email, $user->name);     // Add a recipient
      
             // Content

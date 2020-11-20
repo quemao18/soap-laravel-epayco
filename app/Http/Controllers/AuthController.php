@@ -25,12 +25,14 @@ class AuthController extends Controller
 
         $user = User::where(['document' => $request->input('document'), 'phone' => $request->input('phone')])->first();
     	if (!$user) {
-    		return response()->json(array('error' => 'Unable to find a user matching that email address and document.'), 401);
+    		return response()->json(array('error' => 'Unable to find a user matching that phone and document.'), 401);
     	}
 
         $balance = Transaction::getBalance($user->id);
 
-        return response()->json(['user' => $user, 'balance'=> $balance], 200, []);
+        $token = Token::generateForUser($user->id);
+
+        return response()->json(['user' => $user, 'balance'=> $balance, 'token'=> $token->token], 200, []);
 
     }
 
@@ -44,7 +46,8 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $validator->errors();
+            // return $validator->errors();
+            return response()->json(array('error' => $validator->errors()), 400);      
         }
 
         if (User::where('email', '=', $request->input('email'))->first()) {
@@ -65,7 +68,9 @@ class AuthController extends Controller
 
         $token = Token::generateForUser($user->id);
 
-        return $this->balance($request);
+        return response()->json(['user' => $user, 'token'=> $token->token], 200, []);
+
+        // return $this->balance($request);
     }
 
     public function getAccount() {
