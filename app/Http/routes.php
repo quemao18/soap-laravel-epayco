@@ -22,13 +22,16 @@ $app->routeMiddleware([
 ]);
 
 $app->group(['middleware' => 'apikey'], function($app) {
-	$app->post('/login','App\Http\Controllers\AuthController@login');
+	$app->post('/balance','App\Http\Controllers\AuthController@balance');
 	$app->post('/register','App\Http\Controllers\AuthController@register');
 });
 
 $app->group(['middleware' => ['apikey', 'auth']], function($app) {
 	$app->get('/account', 'App\Http\Controllers\AuthController@getAccount');
 	$app->post('/account', 'App\Http\Controllers\AuthController@updateAccount');
+	$app->post('/wallet/add', 'App\Http\Controllers\WalletController@addMoney');
+	$app->post('/wallet/send', 'App\Http\Controllers\WalletController@sendMoney');
+	$app->post('/wallet/update', 'App\Http\Controllers\WalletController@updateTransaction');
 });
 
 $app->group(['middleware' => ['apikey', 'site']], function($app) {

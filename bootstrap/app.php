@@ -79,7 +79,14 @@ $app->middleware([
 |
 */
 
-// $app->register(App\Providers\AppServiceProvider::class);
+$app->register(App\Providers\AppServiceProvider::class);
+$app->register(\Illuminate\Mail\MailServiceProvider::class); 
+
+$app->configure('service');
+// $app->configure('mail');
+
+$app->alias('mailer', Illuminate\Mail\Mailer::class);
+
 // $app->register(App\Providers\EventServiceProvider::class);
 
 /*

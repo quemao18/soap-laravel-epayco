@@ -27,6 +27,10 @@ final class Token extends Model
         return $token;
 	}
 
+	public static function generateForUserSend($user_id) {
+        return Token::v4UUID_6();
+	}
+
 	public static function expirationTime() {
 		return time() + (60 * 20); // 20 minutes time
 	}
@@ -38,6 +42,12 @@ final class Token extends Model
 		mt_rand(0, 0x0fff) | 0x4000,
 		mt_rand(0, 0x3fff) | 0x8000,
 		mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+		);
+	}
+
+	public static function v4UUID_6() {
+		return sprintf('%06x',
+		mt_rand(0, 0xffffff),
 		);
 	}
 }

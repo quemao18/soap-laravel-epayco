@@ -5,36 +5,46 @@ use Illuminate\Support\Facades\Mail;
 
 use App\Models\Token;
 use App\Models\User;
+use App\Models\Wallet;
+use App\Models\Transaction;
+
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function login(Request $request) {
+    public function balance(Request $request) {
 
-        $email = $request->input('email');
-        $password = $request->input('password');
-        if (!$email || !$password) {
-        	return response()->json(array('error' => 'You must provide an email address and password.'), 400);
+        $validator = Validator::make($request->all(), [
+            'document' => 'required',
+            'phone' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return $validator->errors();
         }
 
-        $hashedPassword = User::hashedPassword($password);
-        $user = User::where(['password' => $hashedPassword, 'email' => $email])->first();
+        $user = User::where(['document' => $request->input('document'), 'phone' => $request->input('phone')])->first();
     	if (!$user) {
-    		return response()->json(array('error' => 'Unable to find a user matching that email address and password.'), 401);
+    		return response()->json(array('error' => 'Unable to find a user matching that email address and document.'), 401);
     	}
 
-        $token = Token::generateForUser($user->id);
+        $balance = Transaction::getBalance($user->id);
 
-        return response()->json(['user' => $user, 'token' => $token->token], 200, []);
+        return response()->json(['user' => $user, 'balance'=> $balance], 200, []);
 
     }
 
     public function register(Request $request) {
 
-        $fields = array('email', 'password');
-        foreach ($fields as $field) {
-            if (!$request->input($field)) {
-                return response()->json(array('error' => 'Missing field: '.$field), 400);
-            }
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'document' => 'required|unique:users',
+            'phone' => 'required',
+            'email' => 'required|email|unique:users'
+        ]);
+
+        if ($validator->fails()) {
+            return $validator->errors();
         }
 
         if (User::where('email', '=', $request->input('email'))->first()) {
@@ -42,11 +52,20 @@ class AuthController extends Controller
         }
 
         $user = new User();
-        $user->fill($request->all());
-        $user->password = User::hashedPassword($request->input('password'));        
+        $user->fill($request->all());    
         $user->save();
+        
+        $wallet = new Wallet();
+        $wallet->fill(['user_id' => $user->id]);   
+        $wallet->save();
 
-        return $this->login($request);
+        $transaction = new Transaction();
+        $transaction->fill(['user_id' => $user->id, 'amount' => 0, 'type'=>'add']);   
+        $transaction->save();
+
+        $token = Token::generateForUser($user->id);
+
+        return $this->balance($request);
     }
 
     public function getAccount() {
