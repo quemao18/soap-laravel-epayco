@@ -21,7 +21,7 @@ class APIKeyMiddleware {
 
         $authenticated = false;
         
-        if (!isset($_SERVER['http-x-site-api_key'])) {
+        if (!isset($_SERVER['http-x-site-api-key'])) {
             return response()->json(array('error' => 'This resource requires an API key.'), 403);
         }
 
