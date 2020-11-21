@@ -21,11 +21,15 @@ class APIKeyMiddleware {
 
         $authenticated = false;
      
-        if (!isset($_SERVER['HTTP_X_SITE_API_KEY'])) {
+        // if (!isset($_SERVER['HTTP_X_SITE_API_KEY'])) {
+        //     return response()->json(array('error' => 'This resource requires an API key.'), 403);
+        // }
+
+        if (!($request->header('HTTP_X_SITE_API_KEY'))) {
             return response()->json(array('error' => 'This resource requires an API key.'), 403);
         }
 
-        $key = $_SERVER['HTTP_X_SITE_API_KEY'];
+        $key = $request->header('HTTP_X_SITE_API_KEY');
         if ($key) {
             $key = ApiKey::where('key', '=', $key)->first();
             if ($key) {
