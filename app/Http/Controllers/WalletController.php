@@ -119,12 +119,10 @@ class WalletController extends Controller
 
         if(!$transaction) {
             return response()->json(array('error' => "Transaction not found"), 401);
+        }else{
+            $transaction->update(['status' => 1]);
+    	    return response()->json(array('success' => "Transaction update success"), 200);
         }
-        
-        $transaction->update(['status' => 1]);
-
-    	return response()->json(array('success' => "Transaction update success"), 200);
-
     }
 
     protected function sendEmail($user, $token)
