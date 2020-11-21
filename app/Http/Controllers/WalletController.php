@@ -115,7 +115,7 @@ class WalletController extends Controller
 
         $data = $request->all();
 
-        $transaction =  Transaction::where('token', $data['token']);
+        $transaction =  Transaction::where('token', $data['token'])->get();
 
         if(!$transaction) {
             return response()->json(array('error' => "Transaction not found"), 401);
